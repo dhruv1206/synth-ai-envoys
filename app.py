@@ -16,28 +16,28 @@ cred = credentials.Certificate('credentials.json')
 firebase_admin.initialize_app(cred, {'storageBucket': STORAGE_BUCKET})
 
 # Define a list of endpoints where the middleware should not run
-exclude_endpoints = ["/getPressReleasesListing","/generateVideos"]
+exclude_endpoints = ["/getPressReleasesListing", "/generateVideos"]
 
 
-# Middleware to check Firebase Authentication token
-@app.before_request
-def check_firebase_auth():
-    if request.path in exclude_endpoints:
-        return
-
-    auth_token = request.headers.get("Authorization")
-    if not auth_token:
-        return {"error": "Unauthorized"}, 401
-
-    try:
-        print(auth_token.replace("Bearer ", ""))
-        decoded_token = auth.verify_id_token(auth_token.replace("Bearer ", ""))
-
-        # You can access user information from decoded_token
-        request.user_id = decoded_token['uid']  # Store user ID in the request context
-        print(request.user_id)
-    except auth.InvalidIdTokenError as e:
-        return {"error": "Unauthorized"}, 401
+# # Middleware to check Firebase Authentication token
+# @app.before_request
+# def check_firebase_auth():
+#     if request.path in exclude_endpoints:
+#         return
+#
+#     auth_token = request.headers.get("Authorization")
+#     if not auth_token:
+#         return {"error": "Unauthorized"}, 401
+#
+#     try:
+#         print(auth_token.replace("Bearer ", ""))
+#         decoded_token = auth.verify_id_token(auth_token.replace("Bearer ", ""))
+#
+#         # You can access user information from decoded_token
+#         request.user_id = decoded_token['uid']  # Store user ID in the request context
+#         print(request.user_id)
+#     except auth.InvalidIdTokenError as e:
+#         return {"error": "Unauthorized"}, 401
 
 
 @app.route("/generateVideos", methods=['GET'])

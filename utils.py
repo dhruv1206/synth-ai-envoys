@@ -46,7 +46,7 @@ def download_image_from_url(image_data, filename):
 
 
 def save_data_to_mongodb(collection_name, data, unique_check="date"):
-    client = pymongo.MongoClient("mongodb://localhost:27017/")
+    client = pymongo.MongoClient("mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
     db = client[DB_NAME]
     collection = db[collection_name]
     existing_document = collection.find_one({unique_check: data[unique_check]})
@@ -60,7 +60,7 @@ def save_data_to_mongodb(collection_name, data, unique_check="date"):
 
 
 def get_data_from_mongodb(collection_name, date):
-    client = pymongo.MongoClient("mongodb://localhost:27017/")
+    client = pymongo.MongoClient("mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
     db = client[DB_NAME]
     collection = db[collection_name]
     query = {}
@@ -71,7 +71,7 @@ def get_data_from_mongodb(collection_name, date):
 
 
 def remove_data_from_mongodb(collection_name, query):
-    client = pymongo.MongoClient("mongodb://localhost:27017/")
+    client = pymongo.MongoClient("mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
     db = client[DB_NAME]
     collection = db[collection_name]
     collection.delete_one(query)

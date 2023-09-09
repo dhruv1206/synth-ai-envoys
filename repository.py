@@ -9,7 +9,7 @@ from utils import get_milliseconds_from_date, save_data_to_mongodb, remove_data_
 
 
 def extract_pr_details(pr_id) -> any:
-    client = pymongo.MongoClient("mongodb://localhost:27017/")
+    client = pymongo.MongoClient("mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
     db = client[DB_NAME]
     collection = db[PR_COLLECTION]
     query = {
@@ -31,7 +31,7 @@ def extract_listing_data(date=None, page_number=1, items_per_page=10, status=PrS
     if items_per_page is None:
         items_per_page = 10
 
-    client = pymongo.MongoClient("mongodb://localhost:27017/")
+    client = pymongo.MongoClient("mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
     db = client[DB_NAME]
     collection = db[PR_COLLECTION]
 
@@ -86,7 +86,7 @@ def remove_from_bookmark(user_id, pr_id):
 
 
 def change_status(pr_id,date, status):
-    client = pymongo.MongoClient("mongodb://localhost:27017/")
+    client = pymongo.MongoClient("mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
     db = client[DB_NAME]
     collection = db[PR_COLLECTION]
     document = collection.find_one({"date": date})
