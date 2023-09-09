@@ -123,7 +123,7 @@ def createImageWithBlurBackground(image_path, video_width, video_height, duratio
 # Create a video using images urls, specifications, and car id
 
 
-def GeneratePRVideo(pr: DescriptiveContent) -> dict[str:str]:
+def GeneratePRVideo(pr: DescriptiveContent):
     # Define video parameters
     video_fps = 30
     # car_id = carDat["id"]
