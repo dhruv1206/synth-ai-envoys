@@ -12,13 +12,15 @@ from firebase_admin import credentials, auth
 app = Flask(__name__)
 
 # Initialize Firebase Admin SDK
-cred = credentials.Certificate('credentials.json')
+cred = credentials.Certificate('synth-ai-envoys-firebase-adminsdk-mz4rm-70cb455043.json')
+
 firebase_admin.initialize_app(cred, {'storageBucket': STORAGE_BUCKET})
 
-# Define a list of endpoints where the middleware should not run
-exclude_endpoints = ["/getPressReleasesListing", "/generateVideos"]
 
-
+# # Define a list of endpoints where the middleware should not run
+# exclude_endpoints = ["/generateVideos"]
+#
+#
 # # Middleware to check Firebase Authentication token
 # @app.before_request
 # def check_firebase_auth():
@@ -38,7 +40,7 @@ exclude_endpoints = ["/getPressReleasesListing", "/generateVideos"]
 #         print(request.user_id)
 #     except auth.InvalidIdTokenError as e:
 #         return {"error": "Unauthorized"}, 401
-
+#
 
 @app.route("/generateVideos", methods=['GET'])
 def generate_videos():
@@ -85,6 +87,8 @@ def retrieve_press_release_details():
 
 @app.route("/addPRToBookmark/<prId>", methods=["POST"])
 def add_pr_to_bookmark(prId):
+    user_id = request.args.get("userId")
+
     if prId is None:
         return {
             "error": "Please add path variable : prId"
@@ -93,13 +97,22 @@ def add_pr_to_bookmark(prId):
         return {
             "error": "Please enter a valid prId"
         }, 400
-    return bson.json_util.dumps(add_bookmark(request.user_id, prId).to_json()), 200, {
+    if user_id is None:
+        return {
+            "error": "Mission query parameter: user_id"
+        }, 400
+    if user_id.strip() == "":
+        return {
+            "error": "Please enter a valid userId"
+        }, 400
+    return bson.json_util.dumps(add_bookmark(user_id, prId).to_json()), 200, {
         "Content-Type": "application/json"}
 
 
 @app.route("/removePRFromBookmark/<prId>", methods=["GET"])
 def remove_pr_from_bookmark(prId):
     try:
+        user_id = request.args.get("userId")
         if prId is None:
             return {
                 "error": "Please add path variable : prId"
@@ -108,7 +121,15 @@ def remove_pr_from_bookmark(prId):
             return {
                 "error": "Please enter a valid prId"
             }, 400
-        remove_bookmark(request.user_id, prId)
+        if user_id is None:
+            return {
+                "error": "Mission query parameter: userId"
+            }, 400
+        if user_id.strip() == "":
+            return {
+                "error": "Please enter a valid userId"
+            }, 400
+        remove_bookmark(user_id, prId)
         return {"success": "Bookmark removed successfully!"}
     except Exception as e:
         print(e)
@@ -116,4 +137,4 @@ def remove_pr_from_bookmark(prId):
 
 
 if __name__ == '__main__':
-    app.run(debug=True,host='0.0.0.0', port=5001)
+    app.run(debug=True, port=5001)
