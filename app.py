@@ -1,3 +1,4 @@
+import json
 import threading
 
 import bson.json_util
@@ -5,7 +6,7 @@ from flask import Flask, jsonify, request
 
 from consts import STORAGE_BUCKET, PrStatus
 from controller import generate_videos_controller, retrieve_press_releases_controller, \
-    retrieve_press_release_details_controller, add_bookmark, remove_bookmark, change_pr_status
+    retrieve_press_release_details_controller, add_bookmark, remove_bookmark, change_pr_status, user_bookmarks
 import firebase_admin
 from firebase_admin import credentials, auth
 
@@ -134,6 +135,26 @@ def remove_pr_from_bookmark(prId):
     except Exception as e:
         print(e)
         return {"error": "Some error occured while removing your bookmark!"}
+
+@app.route("/getUserBookmarks", methods=["GET"])
+def get_user_bookmarks():
+    try:
+        userId = request.args.get("userId");
+        if userId is None:
+            return {
+                "error":"Mission query parameter 'userId'"
+            }, 400
+        if userId.strip() == "":
+            return {
+                "error": "Please enter a valid userId"
+            }, 400
+        bookmarks = json.dumps(user_bookmarks(userId))
+        return bookmarks, 200, {
+            "Content-Type": "application/json"}
+
+    except Exception as e:
+        print(e)
+        return {"error": "Some error occured while fetching your bookmarks!"},400
 
 
 if __name__ == '__main__':

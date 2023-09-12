@@ -98,5 +98,19 @@ def change_status(pr_id,date, status):
     client.close()
 
 
+def get_user_bookmarks(userId):
+    client = pymongo.MongoClient(
+        "mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
+    db = client[DB_NAME]
+    collection = db[BOOKMARKS_COLLECTION]
+    documents = collection.find({"userId": userId})
+    bookmarks = []
+    for document in documents:
+        bookmarks.append(Bookmark.from_json(document))
+    client.close()
+    return bookmarks
+
+
+
 if __name__ == "__main__":
     extract_pr_details("1955324")

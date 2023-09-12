@@ -5,7 +5,8 @@ from bson import json_util
 from DescriptiveContent import DescriptiveContentGenerator
 from consts import PR_COLLECTION
 from generate_pr_video import GeneratePRVideo
-from repository import extract_listing_data, extract_pr_details, add_to_bookmark, remove_from_bookmark, change_status
+from repository import extract_listing_data, extract_pr_details, add_to_bookmark, remove_from_bookmark, change_status, \
+    get_user_bookmarks
 from scrape_images import scrape_images
 from scrape_pib import scrape_pib
 from utils import get_todays_date_milliseconds, save_data_to_mongodb, get_data_from_mongodb, get_milliseconds_from_date
@@ -36,12 +37,21 @@ def add_bookmark(user_id, pr_id):
     return add_to_bookmark(user_id, pr_id)
 
 
-def remove_bookmark(user_id,pr_id):
+def remove_bookmark(user_id, pr_id):
     return remove_from_bookmark(user_id, pr_id)
+
+
+def user_bookmarks(userId):
+    return list(map(
+        lambda x: x.to_json(),
+        get_user_bookmarks(userId)
+    ))
 
 
 def change_pr_status(pr_id, date, status):
     change_status(pr_id, date, status)
+
+
 def save_press_releases():
     data = scrape_pib()
     if data == {}:
