@@ -57,7 +57,14 @@ def extract_listing_data(date=None, page_number=1, items_per_page=10, status=PrS
                 prId = press_release["prId"]
                 title = press_release["title"]
                 description = press_release["descriptive_text"]
-                thumbnail = press_release["imageUrls"][0] if press_release["imageUrls"] else None
+                imageUrls = press_release["imageUrls"] if press_release["imageUrls"] else []
+                videoUrls = []
+
+                try:
+                    videoUrls = press_release["videoUrls"] if press_release["videoUrls"] else []
+                except:
+                    pass
+
                 # print(press_release["approved"], bool(approved))
                 if press_release["status"] != status:
                     continue
@@ -67,7 +74,8 @@ def extract_listing_data(date=None, page_number=1, items_per_page=10, status=PrS
                     "prId": prId,
                     "title": title,
                     "description": description,
-                    "thumbnail": thumbnail,
+                    "imageUrls": imageUrls,
+                    "videoUrls": videoUrls
                 }
     client.close()
 
