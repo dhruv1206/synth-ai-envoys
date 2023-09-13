@@ -6,7 +6,8 @@ from flask import Flask, jsonify, request
 
 from consts import STORAGE_BUCKET, PrStatus
 from controller import generate_videos_controller, retrieve_press_releases_controller, \
-    retrieve_press_release_details_controller, add_bookmark, remove_bookmark, change_pr_status, user_bookmarks
+    retrieve_press_release_details_controller, add_bookmark, remove_bookmark, change_pr_status, user_bookmarks, \
+    search_controller
 import firebase_admin
 from firebase_admin import credentials, auth
 
@@ -68,11 +69,10 @@ def retrieve_press_releases():
 @app.route("/changePressReleaseStatus", methods=["POST"])
 def change_press_release_status():
     pr_id = request.args.get("prId")
-    date = request.args.get("date", type=int)
     status = request.args.get("status")
-    if pr_id is None or date is None or status is None:
+    if pr_id is None is None or status is None:
         return {"error": "Parameters not passed! prId, date, status all three are mandatory!"}, 400
-    change_pr_status(pr_id, date, status)
+    change_pr_status(pr_id, status)
     return {}, 204
 
 
@@ -106,7 +106,7 @@ def add_pr_to_bookmark(prId):
         return {
             "error": "Please enter a valid userId"
         }, 400
-    return bson.json_util.dumps(add_bookmark(user_id, prId).to_json()), 200, {
+    return bson.json_util.dumps(add_bookmark(user_id, prId)), 200, {
         "Content-Type": "application/json"}
 
 
@@ -134,7 +134,8 @@ def remove_pr_from_bookmark(prId):
         return {"success": "Bookmark removed successfully!"}
     except Exception as e:
         print(e)
-        return {"error": "Some error occured while removing your bookmark!"}
+        return {"error": "Some error occured while removing your bookmark!"}, 500
+
 
 @app.route("/getUserBookmarks", methods=["GET"])
 def get_user_bookmarks():
@@ -142,7 +143,7 @@ def get_user_bookmarks():
         userId = request.args.get("userId");
         if userId is None:
             return {
-                "error":"Mission query parameter 'userId'"
+                "error": "Mission query parameter 'userId'"
             }, 400
         if userId.strip() == "":
             return {
@@ -154,7 +155,34 @@ def get_user_bookmarks():
 
     except Exception as e:
         print(e)
-        return {"error": "Some error occured while fetching your bookmarks!"},400
+        return {"error": "Some error occured while fetching your bookmarks!"}, 500
+
+
+@app.route("/getPressReleasesFromQuery", methods=["GET"])
+def search_prs():
+    try:
+        page = request.args.get("page")
+        itemsCount = request.args.get("itemsCount")
+
+        if page is not None:
+            page = int(page)
+        if itemsCount is not None:
+            itemsCount = int(itemsCount)
+        search_query = request.args.get("q")
+        if search_query is None:
+            return {
+                "error": "Mission query parameter 'q'"
+            }, 400
+        if search_query.strip() == "":
+            return {
+                "error": "Please enter a valid searchQuery"
+            }, 400
+        results = search_controller(search_query, page, itemsCount)
+        return results, 200, {
+            "Content-Type": "application/json"}
+    except Exception as e:
+        print(e)
+        return {"error": "Some error occured while getting the search results!"}, 500
 
 
 if __name__ == '__main__':

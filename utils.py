@@ -32,6 +32,8 @@ def get_todays_date_milliseconds():
 
 
 def get_milliseconds_from_date(date: int):
+    if date is None:
+        return None
     date = int(date)
     new_date = datetime.datetime.fromtimestamp(date / 1000)
     new_date = datetime.datetime(new_date.year, new_date.month, new_date.day)
@@ -45,8 +47,9 @@ def download_image_from_url(image_data, filename):
     return filename
 
 
-def save_data_to_mongodb(collection_name, data, unique_check="date"):
-    client = pymongo.MongoClient("mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
+def save_data_to_mongodb(collection_name, data, unique_check):
+    client = pymongo.MongoClient(
+        "mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
     db = client[DB_NAME]
     collection = db[collection_name]
     existing_document = collection.find_one({unique_check: data[unique_check]})
@@ -59,22 +62,28 @@ def save_data_to_mongodb(collection_name, data, unique_check="date"):
     client.close()
 
 
-def get_data_from_mongodb(collection_name, date):
-    client = pymongo.MongoClient("mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
+def get_data_from_mongodb(collection_name, query={}, attrbutes = {}):
+    client = pymongo.MongoClient(
+        "mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
     db = client[DB_NAME]
     collection = db[collection_name]
-    query = {}
-    if date is not None:
-        query = {"date": date}
-    ans = list(map(lambda x: x, collection.find(query)))
+
+    # query = {}
+    # if date is not None:
+    #     query = {"date": date}
+    ans = list(map(lambda x: x
+                   , collection.find(query, attrbutes)))
+    client.close()
     return ans
 
 
 def remove_data_from_mongodb(collection_name, query):
-    client = pymongo.MongoClient("mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
+    client = pymongo.MongoClient(
+        "mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
     db = client[DB_NAME]
     collection = db[collection_name]
     collection.delete_one(query)
+    client.close()
 
 
 def generate_random_string(length):

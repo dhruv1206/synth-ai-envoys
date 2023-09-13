@@ -8,7 +8,7 @@ from utils import count_tokens
 
 
 class DescriptiveContent:
-    def __init__(self, pr_id, title, descriptive_text, image_urls, key_words, date, language, video_urls=[],
+    def __init__(self, pr_id, title, descriptive_text, image_urls, key_words, date, language, ministry = "",video_urls=[],
                  status=PrStatus.PENDING.value):
         self.status = status
         self.prId = pr_id
@@ -19,18 +19,19 @@ class DescriptiveContent:
         self.date = date
         self.language = language
         self.videoUrls = video_urls
-
+        self.ministry = ministry
     def to_json(self):
         return {
             "prId": self.prId,
             "title": self.title,
-            "descriptive_text": self.descriptive_text,
+            "description": self.descriptive_text,
             "imageUrls": self.imageUrls,
-            "key_words": self.key_words,
+            "keyWords": self.key_words,
             "date": self.date,
             "language": self.language,
             "videoUrls": self.videoUrls,
-            "status":self.status
+            "status":self.status,
+            "ministry":self.ministry
         }
 
     @classmethod
@@ -38,13 +39,14 @@ class DescriptiveContent:
         return cls(
             json_dict["prId"],
             json_dict["title"],
-            json_dict["descriptive_text"],
+            json_dict["description"],
             json_dict["imageUrls"],
-            json_dict["key_words"],
+            json_dict["keyWords"],
             json_dict["date"],
             json_dict["language"],
             json_dict.get("videoUrls"),
             json_dict.get("status"),
+            json_dict.get("ministry")
         )
 
 
