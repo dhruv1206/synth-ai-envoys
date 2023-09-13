@@ -173,10 +173,8 @@ def search_prs():
             return {
                 "error": "Mission query parameter 'q'"
             }, 400
-        if search_query.strip() == "":
-            return {
-                "error": "Please enter a valid searchQuery"
-            }, 400
+        if not search_query.strip():
+            return retrieve_press_releases_controller(None, page, itemsCount, PrStatus.PENDING.value)
         results = search_controller(search_query, page, itemsCount)
         return results, 200, {
             "Content-Type": "application/json"}
