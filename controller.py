@@ -99,7 +99,7 @@ def save_user(user_json):
     return user.to_json()
 
 
-def send_notification(fcm_tokens: list[str], title: str, body: str):
+def send_notification(fcm_tokens, title, body):
     for fcm_token in fcm_tokens:
         message = messaging.Message(
             notification=messaging.Notification(
