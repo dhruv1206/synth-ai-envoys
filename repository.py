@@ -1,12 +1,11 @@
-import datetime
 import json
 
 import pymongo
 
-from Bookmark import Bookmark
-from DescriptiveContent import DescriptiveContent
-from consts import DB_NAME, PR_COLLECTION, BOOKMARKS_COLLECTION, PrStatus
-from utils import get_milliseconds_from_date, save_data_to_mongodb, remove_data_from_mongodb
+from Models.DescriptiveContent import DescriptiveContent
+from Models.User import User
+from consts import DB_NAME, PR_COLLECTION, BOOKMARKS_COLLECTION, PrStatus, USERS_COLLECTION
+from utils import get_milliseconds_from_date, save_data_to_mongodb, remove_data_from_mongodb, get_data_from_mongodb
 from bson import json_util
 
 
@@ -54,16 +53,22 @@ def extract_listing_data(date=None, page_number=1, items_per_page=10, status=PrS
 
 
 def add_to_bookmark(user_id, pr_id):
-    pr_details = extract_pr_details(pr_id)
-    if pr_details is not None:
-        bookmark = DescriptiveContent.from_json(pr_details).to_json()
-        bookmark["userId"] = user_id
-        save_data_to_mongodb(BOOKMARKS_COLLECTION, bookmark, "prId")
-    return pr_details
+    user = get_data_from_mongodb(USERS_COLLECTION, {"uuid": user_id})
+    if user is not None:
+        user = User.from_json(user[0])
+        print(user)
+        if pr_id not in user.bookmarks:
+            user.add_bookmark(pr_id)
+        save_data_to_mongodb(USERS_COLLECTION, user.to_json(), "uuid")
 
 
 def remove_from_bookmark(user_id, pr_id):
-    remove_data_from_mongodb(BOOKMARKS_COLLECTION, {"userId": user_id, "prId": pr_id})
+    user = get_data_from_mongodb(USERS_COLLECTION, {"uuid": user_id})
+    if user is not None:
+        user = User.from_json(user[0])
+        if pr_id in user.bookmarks:
+            user.remove_bookmark(pr_id)
+        save_data_to_mongodb(USERS_COLLECTION, user.to_json(), "uuid")
 
 
 def change_status(pr_id, status):
@@ -81,13 +86,23 @@ def get_user_bookmarks(userId):
     client = pymongo.MongoClient(
         "mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
     db = client[DB_NAME]
-    collection = db[BOOKMARKS_COLLECTION]
-    documents = collection.find({"userId": userId})
+    collection = db[USERS_COLLECTION]
+    document = collection.find_one({"uuid": userId})
     bookmarks = []
-    for document in documents:
-        bookmarks.append(json.loads(json_util.dumps(document)))
+    collection = db[PR_COLLECTION]
+    for pr_id in document["bookmarks"]:
+        bookmarks.append(json.loads(json_util.dumps(collection.find_one({"prId": pr_id}))))
+
     client.close()
     return bookmarks
+
+    # collection = db[BOOKMARKS_COLLECTION]
+    # documents = collection.find({"userId": userId})
+    # bookmarks = []
+    # for document in documents:
+    #     bookmarks.append(json.loads(json_util.dumps(document)))
+    # client.close()
+    # return bookmarks
 
 
 def search_repository(search_query, page=1, itemsCount=10):

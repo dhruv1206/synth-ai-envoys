@@ -1,14 +1,16 @@
 import json
 
 import openai
-from OriginalPressRelease import OriginalPressRelease
+
+from Models.OriginalPressRelease import OriginalPressRelease
 from consts import API_KEY, PrStatus
 
 from utils import count_tokens
 
 
 class DescriptiveContent:
-    def __init__(self, pr_id, title, descriptive_text, image_urls, key_words, date, language, video_urls=[],
+    def __init__(self, pr_id, title, descriptive_text, image_urls, key_words, date, language, video_url=None,
+                 audio_urls=[],
                  status=PrStatus.PENDING.value, ministry=""):
         self.status = status
         self.prId = pr_id
@@ -18,8 +20,9 @@ class DescriptiveContent:
         self.key_words = key_words
         self.date = date
         self.language = language
-        self.videoUrls = video_urls
+        self.videoUrl = video_url
         self.ministry = ministry
+        self.audioUrls = audio_urls
 
     def to_json(self):
         return {
@@ -30,9 +33,10 @@ class DescriptiveContent:
             "keyWords": self.key_words,
             "date": self.date,
             "language": self.language,
-            "videoUrls": self.videoUrls,
+            "videoUrl": self.videoUrl,
             "status": self.status,
-            "ministry": self.ministry
+            "ministry": self.ministry,
+            "audioUrls": self.audioUrls
         }
 
     @classmethod
@@ -45,9 +49,10 @@ class DescriptiveContent:
             json_dict["keyWords"],
             json_dict["date"],
             json_dict["language"],
-            json_dict.get("videoUrls"),
+            json_dict.get("videoUrl"),
             json_dict.get("status"),
-            json_dict.get("ministry")
+            json_dict.get("ministry"),
+            json_dict.get("audioUrls")
         )
 
 

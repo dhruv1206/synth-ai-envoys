@@ -1,19 +1,62 @@
-import json
-
+import firebase_admin
 from bson import json_util
+from firebase_admin import credentials
+from firebase_admin import messaging
+from pyfcm import FCMNotification
 
-from DescriptiveContent import DescriptiveContentGenerator
-from consts import PR_COLLECTION
+from Models.DescriptiveContent import DescriptiveContentGenerator
+from Models.User import User
+from consts import PR_COLLECTION, USERS_COLLECTION, FCM_API_KEY
+from consts import STORAGE_BUCKET
 from generate_pr_video import GeneratePRVideo
 from repository import extract_listing_data, extract_pr_details, add_to_bookmark, remove_from_bookmark, change_status, \
     get_user_bookmarks, search_repository
 from scrape_images import scrape_images
 from scrape_pib import scrape_pib
-from utils import get_todays_date_milliseconds, save_data_to_mongodb, get_data_from_mongodb, get_milliseconds_from_date
+from utils import save_data_to_mongodb, get_data_from_mongodb, get_milliseconds_from_date
 
 
 def generate_videos_controller():
-    save_press_releases()
+    data, date = scrape_pib()
+    if data == {}:
+        return
+
+    descriptive_content_generator = DescriptiveContentGenerator()
+    pr_id_list = list(map(lambda x: x["prId"], get_data_from_mongodb(PR_COLLECTION, {}, {"prId": 1})))
+
+    # pr_array = []
+
+    for ministry, press_releases in data.items():
+        # pr_dict = {"ministry": ministry, "press_releases": []}
+        print(pr_id_list)
+        for i, pr in enumerate(press_releases):
+            try:
+                if pr.prId in pr_id_list:
+                    print(f"PR ALREADY EXISTS: {pr.prId}")
+                    continue
+                print(f"PR: {pr.to_json()}")
+                descriptive_content = descriptive_content_generator.generate_descriptive_content(pr)
+                descriptive_content.imageUrls += scrape_images(descriptive_content.key_words)
+                descriptive_content.videoUrl, descriptive_content.audioUrls = GeneratePRVideo(descriptive_content)
+                descriptive_content.ministry = ministry
+                descriptive_content.date = date
+                print(f"Descriptive Content: {descriptive_content.to_json()}")
+
+                save_data_to_mongodb(PR_COLLECTION, descriptive_content.to_json(), "prId")
+                fcm_tokens = get_data_from_mongodb(USERS_COLLECTION, {"preferred_ministries": ministry},
+                                                   {"fcm_token": 1})
+                fcm_tokens = list(map(lambda x: x["fcm_token"], fcm_tokens))
+                print("FCM TOKENS: ", fcm_tokens)
+                send_notification(
+                    fcm_tokens,
+                    title="New Press Release",
+                    body=f"New Press Release from {ministry} has been added"
+                )
+            except Exception as e:
+                print(f"ERROR OCCURED WHILE GENERATING DESCRIPTIVE CONTENT OF : {pr} {e}")
+        # pr_array.append(pr_dict)
+    # res = {"date": get_todays_date_milliseconds(), "all_press_releases": pr_array}
+    # return res
 
 
 def retrieve_press_releases_controller(date, page, items_count, status):
@@ -53,32 +96,25 @@ def change_pr_status(pr_id, status):
     change_status(pr_id, status)
 
 
-def save_press_releases():
-    data = scrape_pib()
-    if data == {}:
-        return
+def save_user(user_json):
+    user = User.from_json(user_json)
+    print(user)
+    save_data_to_mongodb(USERS_COLLECTION, user.to_json(), "email")
+    return user.to_json()
 
-    descriptive_content_generator = DescriptiveContentGenerator()
-    pr_id_list = list(map(lambda x: x["prId"], get_data_from_mongodb(PR_COLLECTION, {}, {"prId": 1})))
 
-    # pr_array = []
-    get = get_data_from_mongodb(PR_COLLECTION)
-    for ministry, press_releases in data.items():
-        # pr_dict = {"ministry": ministry, "press_releases": []}
-        for pr in press_releases:
-            try:
-                if pr["prId"] in pr_id_list:
-                    print(f"PR ALREADY EXISTS: {pr['prId']}")
-                    continue
-                descriptive_content = descriptive_content_generator.generate_descriptive_content(pr)
-                descriptive_content.imageUrls += scrape_images(descriptive_content.key_words)
-                print(f"DESCRIPTIVE CONTENT: {descriptive_content.to_json()}")
-                descriptive_content.videoUrls = GeneratePRVideo(descriptive_content)
-                descriptive_content.ministry = ministry
-                save_data_to_mongodb(PR_COLLECTION, descriptive_content.to_json(), "prId")
+def send_notification(fcm_tokens: list[str], title: str, body: str):
+    for fcm_token in fcm_tokens:
+        message = messaging.Message(
+            notification=messaging.Notification(
+                title=title,
+                body=body,
+            ),
+            token=fcm_token
+        )
 
-            except Exception as e:
-                print(f"ERROR OCCURED WHILE GENERATING DESCRIPTIVE CONTENT OF : {pr} {e}")
-        # pr_array.append(pr_dict)
-    # res = {"date": get_todays_date_milliseconds(), "all_press_releases": pr_array}
-    # return res
+        try:
+            response = messaging.send(message)
+            print("Successfully sent message:", response)
+        except Exception as e:
+            print("Error sending message:", str(e))

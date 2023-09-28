@@ -7,7 +7,7 @@ from flask import Flask, jsonify, request
 from consts import STORAGE_BUCKET, PrStatus
 from controller import generate_videos_controller, retrieve_press_releases_controller, \
     retrieve_press_release_details_controller, add_bookmark, remove_bookmark, change_pr_status, user_bookmarks, \
-    search_controller
+    search_controller, save_user
 import firebase_admin
 from firebase_admin import credentials, auth
 
@@ -88,7 +88,7 @@ def retrieve_press_release_details():
 
 @app.route("/addPRToBookmark/<prId>", methods=["POST"])
 def add_pr_to_bookmark(prId):
-    user_id = request.args.get("userId")
+    user_id = request.args.get("uuid")
 
     if prId is None:
         return {
@@ -106,9 +106,8 @@ def add_pr_to_bookmark(prId):
         return {
             "error": "Please enter a valid userId"
         }, 400
-    return bson.json_util.dumps(add_bookmark(user_id, prId)), 200, {
-        "Content-Type": "application/json"}
-
+    add_bookmark(user_id, prId)
+    return {"success": "Bookmark added successfully!"}
 
 @app.route("/removePRFromBookmark/<prId>", methods=["GET"])
 def remove_pr_from_bookmark(prId):
@@ -140,14 +139,14 @@ def remove_pr_from_bookmark(prId):
 @app.route("/getUserBookmarks", methods=["GET"])
 def get_user_bookmarks():
     try:
-        userId = request.args.get("userId");
+        userId = request.args.get("uuid")
         if userId is None:
             return {
-                "error": "Mission query parameter 'userId'"
+                "error": "Mission query parameter 'uuid'"
             }, 400
         if userId.strip() == "":
             return {
-                "error": "Please enter a valid userId"
+                "error": "Please enter a valid uuid"
             }, 400
         bookmarks = json.dumps(user_bookmarks(userId))
         return bookmarks, 200, {
@@ -170,9 +169,7 @@ def search_prs():
             itemsCount = int(itemsCount)
         search_query = request.args.get("q")
         if search_query is None:
-            return {
-                "error": "Mission query parameter 'q'"
-            }, 400
+            search_query = ""
         if not search_query.strip():
             return retrieve_press_releases_controller(None, page, itemsCount, PrStatus.PENDING.value)
         results = search_controller(search_query, page, itemsCount)
@@ -181,6 +178,34 @@ def search_prs():
     except Exception as e:
         print(e)
         return {"error": "Some error occured while getting the search results!"}, 500
+
+
+@app.route("/saveUser", methods=["POST"])
+def saveUser():
+    user_data = request.get_json()
+    print(user_data)
+    if user_data is None:
+        return {
+            "error": "Missing request body!"
+        }, 400
+    if user_data.get("email") is None:
+        return {
+            "error": "Missing required field: email"
+        }, 400
+    if user_data.get("email").strip() == "":
+        return {
+            "error": "Please enter a valid email"
+        }, 400
+    if user_data.get("uuid") is None:
+        return {
+            "error": "Missing required field: uuid"
+        }, 400
+    if user_data.get("uuid").strip() == "":
+        return {
+            "error": "Please enter a valid uuid"
+        }, 400
+
+    return save_user(user_data), 200
 
 
 

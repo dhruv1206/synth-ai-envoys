@@ -1,15 +1,13 @@
 import base64
 import datetime
-import firebase_admin
 import random
 import string
-from firebase_admin import credentials, storage
+from firebase_admin import storage
 
 import openai
 import pymongo
 
-from Bookmark import Bookmark
-from consts import DB_NAME, PR_COLLECTION
+from consts import DB_NAME
 
 
 # Set your OpenAI API key
@@ -62,7 +60,7 @@ def save_data_to_mongodb(collection_name, data, unique_check):
     client.close()
 
 
-def get_data_from_mongodb(collection_name, query={}, attrbutes = {}):
+def get_data_from_mongodb(collection_name, query={}, attrbutes={}):
     client = pymongo.MongoClient(
         "mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
     db = client[DB_NAME]
@@ -130,4 +128,23 @@ def upload_video_to_firebase(video_url):
         return download_url
     except Exception as e:
         print(e)
-        return []
+        return ""
+
+
+def upload_audio_to_firebase(audio_url):
+    try:
+        bucket = storage.bucket()
+        # Specify the path in Firebase Storage where you want to store the image
+        destination_blob_name = f'audios/{get_todays_date_milliseconds()}/{audio_url.split("/")[-1]}'
+
+        # Upload the image to Firebase Storage
+        blob = bucket.blob(destination_blob_name)
+        blob.upload_from_filename(audio_url)
+        blob.make_public()
+
+        # Get the download URL for the uploaded image
+        download_url = blob.public_url  # URL expiration time in seconds
+        return download_url
+    except Exception as e:
+        print(e)
+        return ""

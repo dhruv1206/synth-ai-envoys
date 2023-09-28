@@ -1,11 +1,12 @@
 import time
+from datetime import datetime
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.ui import WebDriverWait
 
-from OriginalPressRelease import OriginalPressRelease
+from Models.OriginalPressRelease import OriginalPressRelease
 
 
 def scrape_pib():
@@ -22,8 +23,17 @@ def scrape_pib():
     detail_page_twitter_image_class = "css-9pa8cd"
     detail_page_paragraph_xpath = "//p[contains(@style, 'text-align:justify')][not(normalize-space()='&nbsp;')]"
     detail_page_twitter_post_class_name = "blockquote[class='twitter-tweet']"
+    date_select_name = "ctl00$ContentPlaceHolder1$ddlday"
+    month_select_name = "ctl00$ContentPlaceHolder1$ddlMonth"
+    year_select_name = "ctl00$ContentPlaceHolder1$ddlYear"
     browser.get(f"https://pib.gov.in/allRel.aspx")
-    time.sleep(10)
+    time.sleep(5)
+    selected_date = browser.find_element(By.NAME, date_select_name).find_element(By.CSS_SELECTOR, "option[selected]")
+    selected_month = browser.find_element(By.NAME, month_select_name).find_element(By.CSS_SELECTOR, "option[selected]")
+    selected_year = browser.find_element(By.NAME, year_select_name).find_element(By.CSS_SELECTOR, "option[selected]")
+    todays_date_in_milliseconds = datetime.strptime(f"{selected_date.text} {selected_month.text} {selected_year.text}",
+                                                    "%d %B %Y").timestamp() * 1000
+
     try:
         content_area = WebDriverWait(browser, 10).until(
             ec.presence_of_all_elements_located((By.CLASS_NAME, content_area_class)))
@@ -71,7 +81,7 @@ def scrape_pib():
                 original_press_releases.append(OriginalPressRelease(pr_id, title, content, image_urls))
             original_press_releases_dict[key] = original_press_releases
 
-        return original_press_releases_dict
+        return original_press_releases_dict, todays_date_in_milliseconds
 
     except Exception as e:
         browser.quit()

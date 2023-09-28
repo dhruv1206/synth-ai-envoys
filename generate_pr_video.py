@@ -1,5 +1,4 @@
 import gc
-import os
 
 import cv2
 import firebase_admin
@@ -8,15 +7,14 @@ import requests
 from PIL import Image
 from firebase_admin import credentials
 from googletrans import Translator
-from moviepy.audio.io.AudioFileClip import AudioFileClip
 from moviepy.editor import *
 from moviepy.video.VideoClip import VideoClip, ColorClip
 from moviepy.video.fx.all import fadein, fadeout
 
-from DescriptiveContent import DescriptiveContent
+from Models.DescriptiveContent import DescriptiveContent
 from consts import STORAGE_BUCKET
 from text_to_voice import convert_to_speech_in_multiple_languages
-from utils import upload_video_to_firebase
+from utils import upload_video_to_firebase, upload_audio_to_firebase
 
 
 # Define a VideoClip subclass for gradual scaling effect
@@ -128,233 +126,244 @@ def GeneratePRVideo(pr: DescriptiveContent):
     video_fps = 30
     # car_id = carDat["id"]
     image_files = download_and_open_images(pr.imageUrls)
-    languages = ["en", "hi"]
+    languages = ["en", "hi", "bn", "te", "mr", "ta", "ur", "gu", "ml", "kn"]
     convert_to_speech_in_multiple_languages(pr.prId, ". ".join(pr.descriptive_text), languages)
     translator = Translator()
-    ans = []
+
+    maxDuration = 0
+    audio_urls = []
     for lan in languages:
-        try:
-            audio_path = f"{pr.prId}_output_{lan}.mp3"
-            # try:
-            # Open the first image to get dimensions
-            # image = Image.open(image_files[0])
-            image_width, image_height = 1920, 1080
-            aspect_ratio = image_width / image_height
-            # image.close()
+        audio_path = f"{pr.prId}_output_{lan}.mp3"
+        audio_urls.append({
+            "language": lan,
+            "url": upload_audio_to_firebase(audio_path)
+        })
+        audio_clip = AudioFileClip(audio_path)
+        maxDuration = max(maxDuration, audio_clip.duration)
+        audio_clip.close()
+    ans = ""
+    # for lan in languages:
+    try:
+        # audio_path = f"{pr.prId}_output_{lan}.mp3"
+        # try:
+        # Open the first image to get dimensions
+        # image = Image.open(image_files[0])
+        image_width, image_height = 1920, 1080
+        # image.close()
 
-            # Load background music
-            background_music = AudioFileClip(audio_path)
-            # background_music = background_music.fx(vfx.speedx, 1.25)
+        # Load background music
+        # background_music = AudioFileClip(audio_path)
+        # background_music = background_music.fx(vfx.speedx, 1.25)
 
-            # Initialize lists for clips and settings
-            clips = []
+        # Initialize lists for clips and settings
+        clips = []
 
-            duration_per_image = background_music.duration / len(image_files)
+        duration_per_image = maxDuration / len(image_files)
 
-            for i, image_file in enumerate(image_files):
-                # create a clip from the image black.jpg with duration 2s
+        for i, image_file in enumerate(image_files):
+            # create a clip from the image black.jpg with duration 2s
 
-                background_clip = createImageWithBlurBackground(
-                    image_file, image_width, image_height, duration_per_image)
+            background_clip = createImageWithBlurBackground(
+                image_file, image_width, image_height, duration_per_image)
 
-                fade_in_background_clip = fadein(background_clip, duration=1)
-                fade_out_background_clip = fadeout(background_clip, duration=1)
+            fade_in_background_clip = fadein(background_clip, duration=1)
+            fade_out_background_clip = fadeout(background_clip, duration=1)
 
-                # background_clip = GradualScaleClip(
-                #     background_clip, 1.1, duration_per_image, target_fps=video_fps)
+            # background_clip = GradualScaleClip(
+            #     background_clip, 1.1, duration_per_image, target_fps=video_fps)
 
-                image_clip = VideoFileClip(image_file, audio=False)
+            image_clip = VideoFileClip(image_file, audio=False)
 
-                # Fitting the image to the video resolution
-                image_clip_width = image_clip.size[0]
-                image_clip_height = image_clip.size[1]
+            # Fitting the image to the video resolution
+            image_clip_width = image_clip.size[0]
+            image_clip_height = image_clip.size[1]
 
-                scaling_factor = min(image_width / image_clip_width,
-                                     image_height / image_clip_height)
+            scaling_factor = min(image_width / image_clip_width,
+                                 image_height / image_clip_height)
 
-                image_clip = image_clip.resize(
-                    (int(image_clip_width * scaling_factor), int(image_clip_height * scaling_factor)))
+            image_clip = image_clip.resize(
+                (int(image_clip_width * scaling_factor), int(image_clip_height * scaling_factor)))
 
-                # Apply zoom effect
-                zoom_factor = 1.2
-                scaled_clip = GradualScaleClip(
-                    image_clip, zoom_factor, duration_per_image, target_fps=video_fps).set_position(
-                    ("center", "center"))
+            # Apply zoom effect
+            zoom_factor = 1.2
+            scaled_clip = GradualScaleClip(
+                image_clip, zoom_factor, duration_per_image, target_fps=video_fps).set_position(
+                ("center", "center"))
 
-                # Apply fade in and fade out effects
-                fade_in_clip = fadein(scaled_clip, duration=1)
-                fade_out_clip = fadeout(scaled_clip, duration=1)
+            # Apply fade in and fade out effects
+            fade_in_clip = fadein(scaled_clip, duration=1)
+            fade_out_clip = fadeout(scaled_clip, duration=1)
 
-                logo_clip = None
-                # Placing logo on the top right corner
-                #
-                # if (carDat['dealerInfo']['dealerLogo'] is None or carDat['dealerInfo']['dealerLogo'] == "" or
-                #         carDat['dealerInfo']['dealerLogo'] == defaultLogo):
-                #     logo_clip = ImageClip(logo_path, ismask=False,
-                #                           duration=duration_per_image)
-                #     logo_clip = logo_clip.resize((220, 220))
-                #     logo_clip = logo_clip.set_position(
-                #         (image_width - logo_clip.size[0] + 10, -20))
-                #
-                # else:
-                #     logo_path = download_and_open_image(
-                #         carDat['dealerInfo']['dealerLogo'])
-                #     logo_clip = ImageClip(np.array(resize_image_with_aspect_ratio(logo_path, 180)), ismask=False,
-                #                           duration=duration_per_image)
-                #     logo_clip = logo_clip.set_position(
-                #         (image_width - logo_clip.size[0], 0))
-                #
-                # fade_in_logo_clip = fadein(logo_clip, duration=1)
-                # fade_out_logo_clip = fadeout(logo_clip, duration=1)
-
-                # Create text and color clips for each line in specification
-                text_line = TextClip(translator.translate(pr.title, dest=lan).text.encode('utf-8'), font="Segoe-UI",
-                                     fontsize=40,
-                                     color='white',
-                                     interline=10).set_duration(duration_per_image)
-
-                im_width, im_height = text_line.size
-
-                color_clip = ColorClip(size=(int(im_width * 1.05), int(im_height * 1.05)),
-                                       color=(0, 0, 0)).set_duration(duration_per_image)
-                color_clip = color_clip.set_opacity(0.25)
-                text_line = text_line.set_position(
-                    ("center", 0.05), relative=True)
-                color_clip = color_clip.set_position(
-                    ("center", 0.05), relative=True)
-                # for j, line in enumerate(spec.split('\n')):
-                #     if j == 0 or j == 1:
-                #         text_line = TextClip(line, font='Segoe-UI', fontsize=40,
-                #                              color='white',
-                #                              interline=10).set_duration(duration_per_image)
-                #     else:
-                #         text_line = TextClip(line, font='Segoe-UI', fontsize=35,
-                #                              color='white',
-                #                              interline=10).set_duration(duration_per_image)
-                #
-                #     im_width, im_height = text_line.size
-                #     title_width = im_width
-                #
-                #     color_clip = ColorClip(size=(int(im_width * 1.05), int(im_height * 1.05)),
-                #                            color=(0, 0, 0)).set_duration(duration_per_image)
-                #     color_clip = color_clip.set_opacity(0.25)
-                #
-                #     if len(spec.split('\n')) == 2:
-                #         if j == 0:
-                #             text_line = text_line.set_position(
-                #                 ("center", 0.05), relative=True)
-                #             color_clip = color_clip.set_position(
-                #                 ("center", 0.05), relative=True)
-                #         else:
-                #             text_line = text_line.set_position(
-                #                 ("center", 0.85), relative=True)
-                #             color_clip = color_clip.set_position(
-                #                 ("center", 0.85), relative=True)
-                #     else:
-                #         if j == 0:
-                #             text_line = text_line.set_position(
-                #                 ("center", 0.05), relative=True)
-                #             color_clip = color_clip.set_position(
-                #                 ("center", 0.05), relative=True)
-                #         elif j == len(spec.split('\n')) - 1:
-                #             text_line = text_line.set_position(
-                #                 ("center", 0.2), relative=True)
-                #             color_clip = color_clip.set_position(
-                #                 ("center", 0.2), relative=True)
-                #         else:
-                #             text_line = text_line.set_position(
-                #                 ("center", 0.85), relative=True)
-                #             color_clip = color_clip.set_position(
-                #                 ("center", 0.85), relative=True)
-                #
-
-                #
-                #     prev_text_clip_height += (im_height + 20)
-
-                # Create a composite clip with all effects
-                combined_clip = CompositeVideoClip(
-                    [fade_in_background_clip, fade_out_background_clip, fade_in_clip, fade_out_clip,
-                     # text_line, color_clip
-                     ],
-                    use_bgclip=True)
-                clips.append(combined_clip)
-
-            video_width = image_width
-            video_height = image_height
+            logo_clip = None
+            # Placing logo on the top right corner
             #
-            # # Load the image using opencv-python
-            # image_path = brand_details_path
+            # if (carDat['dealerInfo']['dealerLogo'] is None or carDat['dealerInfo']['dealerLogo'] == "" or
+            #         carDat['dealerInfo']['dealerLogo'] == defaultLogo):
+            #     logo_clip = ImageClip(logo_path, ismask=False,
+            #                           duration=duration_per_image)
+            #     logo_clip = logo_clip.resize((220, 220))
+            #     logo_clip = logo_clip.set_position(
+            #         (image_width - logo_clip.size[0] + 10, -20))
             #
-            # background_image_clip = createImageWithBlurBackground(
-            #     image_path, video_width, video_height, duration_per_image, 161)
+            # else:
+            #     logo_path = download_and_open_image(
+            #         carDat['dealerInfo']['dealerLogo'])
+            #     logo_clip = ImageClip(np.array(resize_image_with_aspect_ratio(logo_path, 180)), ismask=False,
+            #                           duration=duration_per_image)
+            #     logo_clip = logo_clip.set_position(
+            #         (image_width - logo_clip.size[0], 0))
             #
-            # image_clip = ImageClip(image_path, ismask=False,
-            #                        duration=duration_per_image).set_position(("center", "center"))
+            # fade_in_logo_clip = fadein(logo_clip, duration=1)
+            # fade_out_logo_clip = fadeout(logo_clip, duration=1)
+
+            # Create text and color clips for each line in specification
+            text_line = TextClip(translator.translate(pr.title, dest=lan).text.encode('utf-8'), font="Segoe-UI",
+                                 fontsize=40,
+                                 color='white',
+                                 interline=10).set_duration(duration_per_image)
+
+            im_width, im_height = text_line.size
+
+            color_clip = ColorClip(size=(int(im_width * 1.05), int(im_height * 1.05)),
+                                   color=(0, 0, 0)).set_duration(duration_per_image)
+            color_clip = color_clip.set_opacity(0.25)
+            text_line = text_line.set_position(
+                ("center", 0.05), relative=True)
+            color_clip = color_clip.set_position(
+                ("center", 0.05), relative=True)
+            # for j, line in enumerate(spec.split('\n')):
+            #     if j == 0 or j == 1:
+            #         text_line = TextClip(line, font='Segoe-UI', fontsize=40,
+            #                              color='white',
+            #                              interline=10).set_duration(duration_per_image)
+            #     else:
+            #         text_line = TextClip(line, font='Segoe-UI', fontsize=35,
+            #                              color='white',
+            #                              interline=10).set_duration(duration_per_image)
             #
-            # # Making image_clip size fixed using scaling_factor
-            # image_clip_width = image_clip.size[0]
-            # image_clip_height = image_clip.size[1]
+            #     im_width, im_height = text_line.size
+            #     title_width = im_width
             #
-            # scaling_factor = min(video_width / image_clip_width,
-            #                      video_height / image_clip_height)
+            #     color_clip = ColorClip(size=(int(im_width * 1.05), int(im_height * 1.05)),
+            #                            color=(0, 0, 0)).set_duration(duration_per_image)
+            #     color_clip = color_clip.set_opacity(0.25)
             #
-            # image_clip = image_clip.resize(
-            #     (int(image_clip_width * scaling_factor), int(image_clip_height * scaling_factor)))
+            #     if len(spec.split('\n')) == 2:
+            #         if j == 0:
+            #             text_line = text_line.set_position(
+            #                 ("center", 0.05), relative=True)
+            #             color_clip = color_clip.set_position(
+            #                 ("center", 0.05), relative=True)
+            #         else:
+            #             text_line = text_line.set_position(
+            #                 ("center", 0.85), relative=True)
+            #             color_clip = color_clip.set_position(
+            #                 ("center", 0.85), relative=True)
+            #     else:
+            #         if j == 0:
+            #             text_line = text_line.set_position(
+            #                 ("center", 0.05), relative=True)
+            #             color_clip = color_clip.set_position(
+            #                 ("center", 0.05), relative=True)
+            #         elif j == len(spec.split('\n')) - 1:
+            #             text_line = text_line.set_position(
+            #                 ("center", 0.2), relative=True)
+            #             color_clip = color_clip.set_position(
+            #                 ("center", 0.2), relative=True)
+            #         else:
+            #             text_line = text_line.set_position(
+            #                 ("center", 0.85), relative=True)
+            #             color_clip = color_clip.set_position(
+            #                 ("center", 0.85), relative=True)
             #
-            # clips.append(CompositeVideoClip(
-            #     [background_image_clip, image_clip], use_bgclip=True))
 
-            # Concatenate all clips to create the final video
-            final_clip = concatenate_videoclips(clips)
+            #
+            #     prev_text_clip_height += (im_height + 20)
 
-            # Trim background music to match final clip duration
-            background_music_duration = final_clip.duration
-            background_music = background_music.subclip(
-                0, background_music_duration)
+            # Create a composite clip with all effects
+            combined_clip = CompositeVideoClip(
+                [fade_in_background_clip, fade_out_background_clip, fade_in_clip, fade_out_clip,
+                 # text_line, color_clip
+                 ],
+                use_bgclip=True)
+            clips.append(combined_clip)
 
-            # Set background music and resize the final video
-            final_clip = final_clip.set_audio(background_music)
-            final_clip = final_clip.resize((video_width, video_height))
+        video_width = image_width
+        video_height = image_height
+        #
+        # # Load the image using opencv-python
+        # image_path = brand_details_path
+        #
+        # background_image_clip = createImageWithBlurBackground(
+        #     image_path, video_width, video_height, duration_per_image, 161)
+        #
+        # image_clip = ImageClip(image_path, ismask=False,
+        #                        duration=duration_per_image).set_position(("center", "center"))
+        #
+        # # Making image_clip size fixed using scaling_factor
+        # image_clip_width = image_clip.size[0]
+        # image_clip_height = image_clip.size[1]
+        #
+        # scaling_factor = min(video_width / image_clip_width,
+        #                      video_height / image_clip_height)
+        #
+        # image_clip = image_clip.resize(
+        #     (int(image_clip_width * scaling_factor), int(image_clip_height * scaling_factor)))
+        #
+        # clips.append(CompositeVideoClip(
+        #     [background_image_clip, image_clip], use_bgclip=True))
 
-            video_path = f"{pr.prId}_{lan}.mp4"
+        # Concatenate all clips to create the final video
+        final_clip = concatenate_videoclips(clips)
 
-            # Write the final video file
-            final_clip.write_videofile(
-                video_path, codec="libx264", fps=video_fps)
+        # Trim background music to match final clip duration
+        # background_music_duration = final_clip.duration
+        # background_music = background_music.subclip(
+        #     0, background_music_duration)
 
-            ans.append({"language": lan, "url": upload_video_to_firebase(video_path)})
+        # Set background music and resize the final video
+        # final_clip = final_clip.set_audio(background_music)
+        final_clip = final_clip.resize((video_width, video_height))
 
-            # Close video clips
-            for combined_clip in clips:
-                combined_clip.close()
+        video_path = f"{pr.prId}.mp4"
 
-            # Close final clip
-            final_clip.close()
+        # Write the final video file
+        final_clip.write_videofile(
+            video_path, codec="libx264", fps=video_fps)
 
-            # Close audio clips
-            background_music.close()
+        ans = upload_video_to_firebase(video_path)
 
-            # Explicitly trigger garbage collection
-            gc.collect()
+        # Close video clips
+        for combined_clip in clips:
+            combined_clip.close()
 
-            # Upload video to Instagram and Youtube
+        # Close final clip
+        final_clip.close()
 
-            # Remove image files
+        # Close audio clips
+        # background_music.close()
 
-            # except Exception as e:
-            #     print("An error occurred:", e)
-            #     # Handle exceptions appropriately
-        except Exception as e:
-            print(e)
-            continue
+        # Explicitly trigger garbage collection
+        gc.collect()
+
+        # Upload video to Instagram and Youtube
+
+        # Remove image files
+
+        # except Exception as e:
+        #     print("An error occurred:", e)
+        #     # Handle exceptions appropriately
+    except Exception as e:
+        print(e)
+        # continue
 
     for image_file in image_files:
         os.remove(image_file)
     for lang in languages:
         os.remove(f"{pr.prId}_output_{lang}.mp3")
-        os.remove(f"{pr.prId}_{lang}.mp4")
 
-    return ans
+    os.remove(f"{pr.prId}.mp4")
+    return ans, audio_urls
 
 
 if __name__ == "__main__":
