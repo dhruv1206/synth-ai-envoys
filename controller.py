@@ -1,13 +1,9 @@
-import firebase_admin
 from bson import json_util
-from firebase_admin import credentials
 from firebase_admin import messaging
-from pyfcm import FCMNotification
 
 from Models.DescriptiveContent import DescriptiveContentGenerator
 from Models.User import User
-from consts import PR_COLLECTION, USERS_COLLECTION, FCM_API_KEY
-from consts import STORAGE_BUCKET
+from consts import PR_COLLECTION, USERS_COLLECTION
 from generate_pr_video import GeneratePRVideo
 from repository import extract_listing_data, extract_pr_details, add_to_bookmark, remove_from_bookmark, change_status, \
     get_user_bookmarks, search_repository

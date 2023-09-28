@@ -1,12 +1,11 @@
 import json
 
 import pymongo
-
-from Models.DescriptiveContent import DescriptiveContent
-from Models.User import User
-from consts import DB_NAME, PR_COLLECTION, BOOKMARKS_COLLECTION, PrStatus, USERS_COLLECTION
-from utils import get_milliseconds_from_date, save_data_to_mongodb, remove_data_from_mongodb, get_data_from_mongodb
 from bson import json_util
+
+from Models.User import User
+from consts import DB_NAME, PR_COLLECTION, PrStatus, USERS_COLLECTION
+from utils import get_milliseconds_from_date, save_data_to_mongodb, get_data_from_mongodb
 
 
 def extract_pr_details(pr_id) -> any:

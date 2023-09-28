@@ -1,5 +1,3 @@
-import datetime
-
 from utils import get_todays_date_milliseconds
 
 

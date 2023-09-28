@@ -1,15 +1,14 @@
 import json
 import threading
 
-import bson.json_util
+import firebase_admin
+from firebase_admin import credentials
 from flask import Flask, jsonify, request
 
 from consts import STORAGE_BUCKET, PrStatus
 from controller import generate_videos_controller, retrieve_press_releases_controller, \
     retrieve_press_release_details_controller, add_bookmark, remove_bookmark, change_pr_status, user_bookmarks, \
     search_controller, save_user
-import firebase_admin
-from firebase_admin import credentials, auth
 
 app = Flask(__name__)
 

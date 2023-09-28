@@ -1,6 +1,3 @@
-import json
-
-
 class User:
     def __init__(self, email: str, uuid: str, username=None, alternate_email=None, phone_number=None,
                  preferred_ministries=None, fcm_token=None, bookmarks=[]):
