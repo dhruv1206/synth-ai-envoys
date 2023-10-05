@@ -55,6 +55,16 @@ class User:
         }
         return user_dict
 
+    def update_user(self, user_dict):
+        """Update the User object with the values from the provided user dictionary."""
+        self.email = user_dict.get("email", self.email)
+        self.username = user_dict.get("username", self.username)
+        self.alternate_email = user_dict.get("alternate_email", self.alternate_email)
+        self.phone_number = user_dict.get("phone_number", self.phone_number)
+        self.preferred_ministries = user_dict.get("preferred_ministries", self.preferred_ministries)
+        self.fcm_token = user_dict.get("fcm_token", self.fcm_token)
+        self.bookmarks = user_dict.get("bookmarks", self.bookmarks)
+
     @classmethod
     def from_json(cls, user_dict):
         """Create a User object from a JSON string."""

@@ -111,7 +111,7 @@ def add_pr_to_bookmark(prId):
 @app.route("/removePRFromBookmark/<prId>", methods=["GET"])
 def remove_pr_from_bookmark(prId):
     try:
-        user_id = request.args.get("userId")
+        user_id = request.args.get("uuid")
         if prId is None:
             return {
                 "error": "Please add path variable : prId"

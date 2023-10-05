@@ -53,7 +53,7 @@ def extract_listing_data(date=None, page_number=1, items_per_page=10, status=PrS
 
 def add_to_bookmark(user_id, pr_id):
     user = get_data_from_mongodb(USERS_COLLECTION, {"uuid": user_id})
-    if user is not None:
+    if user is not None and user != []:
         user = User.from_json(user[0])
         print(user)
         if pr_id not in user.bookmarks:
@@ -63,7 +63,8 @@ def add_to_bookmark(user_id, pr_id):
 
 def remove_from_bookmark(user_id, pr_id):
     user = get_data_from_mongodb(USERS_COLLECTION, {"uuid": user_id})
-    if user is not None:
+    if user is not None and user != []:
+
         user = User.from_json(user[0])
         if pr_id in user.bookmarks:
             user.remove_bookmark(pr_id)
@@ -87,6 +88,8 @@ def get_user_bookmarks(userId):
     db = client[DB_NAME]
     collection = db[USERS_COLLECTION]
     document = collection.find_one({"uuid": userId})
+    if document is None:
+        return []
     bookmarks = []
     collection = db[PR_COLLECTION]
     for pr_id in document["bookmarks"]:

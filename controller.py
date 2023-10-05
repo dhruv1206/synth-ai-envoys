@@ -46,7 +46,8 @@ def generate_videos_controller():
                 send_notification(
                     fcm_tokens,
                     title="New Press Release",
-                    body=f"New Press Release from {ministry} has been added"
+                    body=f"New Press Release from {ministry} has been added",
+                    image=descriptive_content.imageUrls[0]
                 )
             except Exception as e:
                 print(f"ERROR OCCURED WHILE GENERATING DESCRIPTIVE CONTENT OF : {pr} {e}")
@@ -93,18 +94,24 @@ def change_pr_status(pr_id, status):
 
 
 def save_user(user_json):
-    user = User.from_json(user_json)
+    user = get_data_from_mongodb(USERS_COLLECTION, {"uuid": user_json["uuid"]})
     print(user)
-    save_data_to_mongodb(USERS_COLLECTION, user.to_json(), "email")
+    if user is not None and user != []:
+        user = User.from_json(user[0])
+        user.update_user(user_json)
+    else:
+        user = User.from_json(user_json)
+    save_data_to_mongodb(USERS_COLLECTION, user.to_json(), "uuid")
     return user.to_json()
 
 
-def send_notification(fcm_tokens, title, body):
+def send_notification(fcm_tokens, title, body, image=None):
     for fcm_token in fcm_tokens:
         message = messaging.Message(
             notification=messaging.Notification(
                 title=title,
                 body=body,
+                image=image
             ),
             token=fcm_token
         )
