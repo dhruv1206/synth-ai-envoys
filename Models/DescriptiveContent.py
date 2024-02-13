@@ -60,11 +60,11 @@ class DescriptiveContentGenerator:
     def __init__(self):
         openai.api_key = API_KEY
         self.engine = "text-davinci-003"  # Choose an appropriate engine
-        self.temperature = 0.7
+        self.temperature = 0
         self.max_tokens = 4096  # You can adjust this based on the desired length
 
     def generate_descriptive_content(self, original_press_release) -> DescriptiveContent:
-        print(f"Original Press Release:  {original_press_release.to_json()}")
+        # print(f"Original Press Release:  {original_press_release.to_json()}")
         prompt = f'''Given the press release: "{original_press_release.content}", generate more descriptive and 
         summarized content (such that whole context of the news is clear), including visuals and scene descriptions. 
         Consider '\\' as a line break. The format of the result should be in json and the fields should be:

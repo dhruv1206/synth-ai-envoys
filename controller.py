@@ -24,15 +24,15 @@ def generate_videos_controller():
 
     for ministry, press_releases in data.items():
         # pr_dict = {"ministry": ministry, "press_releases": []}
-        print(pr_id_list)
         for i, pr in enumerate(press_releases):
             try:
                 if pr.prId in pr_id_list:
                     print(f"PR ALREADY EXISTS: {pr.prId}")
                     continue
-                print(f"PR: {pr.to_json()}")
+                # print(f"PR: {pr.to_json()}")
                 descriptive_content = descriptive_content_generator.generate_descriptive_content(pr)
                 descriptive_content.imageUrls += scrape_images(descriptive_content.key_words)
+                # print(f"Descriptive Content: {descriptive_content.to_json()}")
                 descriptive_content.videoUrl, descriptive_content.audioUrls = GeneratePRVideo(descriptive_content)
                 descriptive_content.ministry = ministry
                 descriptive_content.date = date
