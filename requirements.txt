@@ -9,4 +9,6 @@ opencv-python
 Pillow
 moviepy
 selenium
+urllib3==1.25.11
 requests==2.26.0
+
