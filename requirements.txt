@@ -9,4 +9,4 @@ opencv-python
 Pillow
 moviepy
 selenium
-requests
+requests==2.26.0
