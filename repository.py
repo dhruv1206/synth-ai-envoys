@@ -10,14 +10,16 @@ from utils import get_milliseconds_from_date, save_data_to_mongodb, get_data_fro
 
 def extract_pr_details(pr_id) -> any:
     client = pymongo.MongoClient(
-        "mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
+        host='SIH_2023',
+        port=27017, username='root', password="pass", authSource='admin')
     db = client[DB_NAME]
     collection = db[PR_COLLECTION]
     query = {
         "prId": pr_id
     }
     document = collection.find_one(query)
-    data = json.loads(json_util.dumps(document)) if document is not None else None
+    data = json.loads(json_util.dumps(document)
+                      ) if document is not None else None
     client.close()
     return data
 
@@ -29,7 +31,8 @@ def extract_listing_data(date=None, page_number=1, items_per_page=10, status=PrS
         items_per_page = 10
 
     client = pymongo.MongoClient(
-        "mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
+        host='SIH_2023',
+        port=27017, username='root', password="pass", authSource='admin')
     db = client[DB_NAME]
     collection = db[PR_COLLECTION]
 
@@ -44,7 +47,8 @@ def extract_listing_data(date=None, page_number=1, items_per_page=10, status=PrS
     start_index = (page_number - 1) * items_per_page
     print(query)
     # Find documents that match the query
-    documents = collection.find(query).sort("date", -1).skip(start_index).limit(items_per_page)
+    documents = collection.find(query).sort(
+        "date", -1).skip(start_index).limit(items_per_page)
     data = list(map(lambda x: json.loads(json_util.dumps(x)), documents))
 
     client.close()
@@ -73,7 +77,8 @@ def remove_from_bookmark(user_id, pr_id):
 
 def change_status(pr_id, status):
     client = pymongo.MongoClient(
-        "mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
+        host='SIH_2023',
+        port=27017, username='root', password="pass", authSource='admin')
     db = client[DB_NAME]
     collection = db[PR_COLLECTION]
     document = collection.find_one({"prId": pr_id})
@@ -84,7 +89,8 @@ def change_status(pr_id, status):
 
 def get_user_bookmarks(userId):
     client = pymongo.MongoClient(
-        "mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
+        host='SIH_2023',
+        port=27017, username='root', password="pass", authSource='admin')
     db = client[DB_NAME]
     collection = db[USERS_COLLECTION]
     document = collection.find_one({"uuid": userId})
@@ -93,7 +99,8 @@ def get_user_bookmarks(userId):
     bookmarks = []
     collection = db[PR_COLLECTION]
     for pr_id in document["bookmarks"]:
-        bookmarks.append(json.loads(json_util.dumps(collection.find_one({"prId": pr_id}))))
+        bookmarks.append(json.loads(json_util.dumps(
+            collection.find_one({"prId": pr_id}))))
 
     client.close()
     return bookmarks
@@ -113,7 +120,8 @@ def search_repository(search_query, page=1, itemsCount=10):
     if itemsCount is None:
         itemsCount = 10
     client = pymongo.MongoClient(
-        "mongodb+srv://agrawaldhruv1006:ezYjMUKpJefVGvBI@cluster0.kdxmrzd.mongodb.net/?retryWrites=true&w=majority")
+        host='SIH_2023',
+        port=27017, username='root', password="pass", authSource='admin')
     db = client[DB_NAME]
     collection = db[PR_COLLECTION]
     query = {

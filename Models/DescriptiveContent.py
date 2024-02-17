@@ -59,7 +59,7 @@ class DescriptiveContent:
 class DescriptiveContentGenerator:
     def __init__(self):
         openai.api_key = API_KEY
-        self.engine = "text-davinci-003"  # Choose an appropriate engine
+        self.engine = "gpt-3.5-turbo-instruct"  # Choose an appropriate engine
         self.temperature = 0
         self.max_tokens = 4096  # You can adjust this based on the desired length
 

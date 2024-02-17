@@ -15,7 +15,7 @@ from consts import DB_NAME
 
 def count_tokens(text):
     tokens = openai.Completion.create(
-        engine="davinci",  # Choose an appropriate engine
+        engine="davinci-002",  # Choose an appropriate engine
         prompt=text,
         max_tokens=1,
         temperature=0,

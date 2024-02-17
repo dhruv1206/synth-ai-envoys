@@ -1,4 +1,6 @@
 import json
+import os
+import sys
 import threading
 
 import firebase_admin
@@ -108,6 +110,7 @@ def add_pr_to_bookmark(prId):
     add_bookmark(user_id, prId)
     return {"success": "Bookmark added successfully!"}
 
+
 @app.route("/removePRFromBookmark/<prId>", methods=["GET"])
 def remove_pr_from_bookmark(prId):
     try:
@@ -205,8 +208,6 @@ def saveUser():
         }, 400
 
     return save_user(user_data), 200
-
-
 
 
 if __name__ == '__main__':

@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  flask_app:
+    build: .
+    ports:
+      - "5000:5000"
+    depends_on:
+      mongo:
+        condition: service_started
+    environment:
+      - MONGO_INITDB_DATABASE=SIH_2023
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=pass
+
+  mongo:
+    image: mongo:4.0.8
+    hostname: SIH_2023
+    environment:
+      - MONGO_INITDB_DATABASE=SIH_2023
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=pass
+    volumes:
+      - mongodbdata:/data/db
+    ports:
+      - "27017:27017"
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  mongodbdata:
+    driver: local
