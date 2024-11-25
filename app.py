@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import threading
+from flask_caching import Cache
 
 import firebase_admin
 from firebase_admin import credentials
@@ -13,9 +14,11 @@ from controller import generate_videos_controller, retrieve_press_releases_contr
     search_controller, save_user
 
 app = Flask(__name__)
+cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 # Initialize Firebase Admin SDK
-cred = credentials.Certificate('synth-ai-envoys-firebase-adminsdk-mz4rm-70cb455043.json')
+cred = credentials.Certificate(
+    'synth-ai-envoys-firebase-adminsdk-mz4rm-70cb455043.json')
 
 firebase_admin.initialize_app(cred, {'storageBucket': STORAGE_BUCKET})
 
@@ -53,6 +56,7 @@ def generate_videos():
 
 
 @app.route("/getPressReleasesListing", methods=['GET'])
+@cache.cached(timeout=600)  # Cache data for 600 seconds
 def retrieve_press_releases():
     date = request.args.get("date")
     page = request.args.get("page")

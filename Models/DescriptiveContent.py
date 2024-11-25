@@ -1,6 +1,7 @@
 import json
 
 import openai
+from meta_ai_api import MetaAI
 
 from Models.OriginalPressRelease import OriginalPressRelease
 from consts import API_KEY, PrStatus
@@ -90,15 +91,17 @@ result should be something like : {{
 
     The result should only contain the above fields and nothing else. The result should be in json format
         '''
-
-        response = openai.Completion.create(
-            engine=self.engine,
-            prompt=prompt,
-            temperature=self.temperature,
-            max_tokens=self.max_tokens - count_tokens(prompt),
-        )
-
-        response = json.loads(response.choices[0].text)
+        ai = MetaAI()
+        # response = openai.Completion.create(
+        #     engine=self.engine,
+        #     prompt=prompt,
+        #     temperature=self.temperature,
+        #     max_tokens=self.max_tokens - count_tokens(prompt),
+        # )
+        response = ai.prompt(prompt)
+        print(response)
+        response = json.loads(response["message"])
+        print(response)
 
         pr_id = original_press_release.prId
         title = original_press_release.title

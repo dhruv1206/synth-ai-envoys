@@ -17,7 +17,7 @@ def scrape_images(image_keywords):
         try:
             correct_query = query.replace(" ", "+")
 
-            individual_image_selector_class = ".rg_i.Q4LuWd"
+            individual_image_selector_class = ".mNsIhb .YQ4gaf"
 
             browser.get(f"https://www.google.com/search?q={correct_query}&tbm=isch")
 
